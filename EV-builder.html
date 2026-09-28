@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EV BUILD — конфигуратор электромотоцикла</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+:root{
+  --bg:#151517; --bg2:#1B1B1E;
+  --glass:rgba(255,255,255,.045); --glass-hi:rgba(255,255,255,.075);
+  --brd:rgba(255,255,255,.10); --brd-hi:rgba(255,255,255,.20);
+  --hair:rgba(255,255,255,.09);
+  --txt:#EDEDE8; --mut:#9B9B94;
+  --red:#FF4433; --orange:#FF8A3D; --yellow:#FFC93C;
+  --pwr:var(--orange); --trq:var(--yellow);
+  --amb:var(--orange); --ok:#FFD86B;
+  --disp:'IBM Plex Sans Condensed','Arial Narrow',system-ui,sans-serif;
+  --ui:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;min-height:100%}
+body{
+  background:
+    radial-gradient(760px 460px at 8% -8%, rgba(255,68,51,.16), transparent 60%),
+    radial-gradient(900px 520px at 96% 6%, rgba(255,138,61,.14), transparent 60%),
+    radial-gradient(1000px 620px at 50% 100%, rgba(255,201,60,.08), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--txt);font-family:var(--ui);font-size:14px;-webkit-font-smoothing:antialiased;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--orange);outline-offset:1px;border-radius:4px}
+
+/* ---------- стекло ---------- */
+.glass{
+  background:var(--glass);
+  border:1px solid var(--brd);
+  border-radius:16px;
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 10px 30px rgba(0,0,0,.28);
+}
+
+/* ---------- шапка ---------- */
+header{position:sticky;top:0;z-index:20;padding:14px 22px 0}
+.bar{display:flex;align-items:center;gap:20px;padding:11px 18px;margin-bottom:10px}
+.mark{font-family:var(--disp);font-weight:700;font-size:20px;letter-spacing:.22em;text-transform:uppercase;white-space:nowrap;
+  background:linear-gradient(90deg,#FFD86B,var(--orange) 55%,var(--red));-webkit-background-clip:text;background-clip:text;color:transparent}
+.mark b{color:var(--red);-webkit-text-fill-color:var(--red)}
+.mark-s{font-size:11px;letter-spacing:.06em;color:var(--mut);margin-top:2px}
+.bar-sp{flex:1}
+.acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.btn{background:var(--glass);border:1px solid var(--brd);color:var(--txt);border-radius:9px;
+  font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;font-size:11.5px;padding:7px 12px;
+  backdrop-filter:blur(10px)}
+.btn:hover{border-color:var(--brd-hi);background:var(--glass-hi)}
+.btn.pri{background:linear-gradient(135deg,var(--orange),var(--red));border-color:transparent;color:#1A0E08;font-weight:600}
+.btn.pri:hover{filter:brightness(1.08)}
+.seg{display:inline-flex;border:1px solid var(--brd);border-radius:9px;overflow:hidden;background:var(--glass)}
+.seg button{background:transparent;border:0;border-right:1px solid var(--brd);color:var(--mut);
+  font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;font-size:11.5px;padding:7px 12px}
+.seg button:last-child{border-right:0}
+.seg button.on{background:linear-gradient(135deg,var(--orange),var(--red));color:#1A0E08;font-weight:600}
+
+.tabs{display:flex;gap:8px;align-items:stretch;overflow-x:auto;padding-bottom:10px}
+.tab{display:flex;align-items:center;border-radius:12px;position:relative;flex:none;
+  background:var(--glass);border:1px solid var(--brd);backdrop-filter:blur(14px)}
+.tab .go{background:transparent;border:0;padding:9px 13px;text-align:left;color:var(--mut)}
+.tab .go .nm{font-family:var(--disp);font-size:14px;letter-spacing:.05em;text-transform:uppercase;display:block}
+.tab .go .kw{font-family:var(--mono);font-size:10.5px;display:block;margin-top:1px}
+.tab.on{border-color:rgba(255,138,61,.55);box-shadow:0 0 0 1px rgba(255,138,61,.18) inset,0 0 22px rgba(255,138,61,.15)}
+.tab.on .go{color:var(--txt)}
+.tab.on .go .nm{color:var(--orange)}
+.tab .rm{background:transparent;border:0;color:var(--mut);padding:0 11px;font-size:16px;line-height:1;align-self:stretch}
+.tab .rm:hover{color:var(--red)}
+.tab-add{background:var(--glass);border:1px dashed var(--brd);border-radius:12px;color:var(--mut);
+  font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;font-size:11.5px;padding:0 15px}
+.tab-add:hover{color:var(--txt);border-color:var(--brd-hi)}
+.saved{margin-left:auto;align-self:center;font-family:var(--mono);font-size:10px;color:var(--mut);padding-left:10px;white-space:nowrap}
+
+/* ---------- кластер показателей ---------- */
+.cluster{display:grid;grid-template-columns:repeat(6,1fr);margin-bottom:12px;overflow:hidden}
+.cl{padding:14px 16px 15px;border-right:1px solid var(--hair)}
+.cl:last-child{border-right:0}
+.cl-k{font-family:var(--disp);text-transform:uppercase;letter-spacing:.12em;font-size:10.5px;color:var(--mut)}
+.cl-v{font-family:var(--mono);font-weight:600;font-size:29px;line-height:1.1;margin-top:5px;letter-spacing:-.02em}
+.cl-v u{text-decoration:none;font-size:12px;font-weight:500;color:var(--mut);margin-left:4px}
+.cl-s{font-size:11px;color:var(--mut);margin-top:3px}
+.cl.pwr .cl-v{color:var(--orange)} .cl.trq .cl-v{color:var(--yellow)}
+
+/* ---------- рабочая область ---------- */
+.wrap{display:grid;grid-template-columns:minmax(300px,356px) 1fr;gap:16px;padding:0 22px 44px;align-items:start;max-width:1640px;margin:0 auto}
+.col{display:flex;flex-direction:column;gap:12px}
+
+.card>h3{margin:0;display:flex;align-items:center;gap:9px;padding:9px 14px;border-bottom:1px solid var(--hair);
+  font-family:var(--disp);font-size:15px;text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+.card>h3 .ix{font-family:var(--mono);font-size:10px;background:linear-gradient(135deg,var(--yellow),var(--orange));
+  color:#1A0E08;padding:2px 6px;line-height:1;border-radius:5px;font-weight:600}
+.card>h3 .sp{margin-left:auto;font-family:var(--ui);text-transform:none;letter-spacing:0;font-size:12px;font-weight:400}
+.pad{padding:10px 14px 13px}
+
+.row{display:flex;align-items:baseline;gap:7px;padding:4px 0;font-size:13px}
+.row .lb{white-space:nowrap;color:var(--txt)}
+.row .lb i{display:block;font-style:normal;font-size:10.5px;color:var(--mut);line-height:1.25}
+.row .dt{flex:1;border-bottom:1px dotted var(--brd);transform:translateY(-3px)}
+.row .fd{display:flex;align-items:baseline;gap:5px}
+.row .un{font-family:var(--mono);font-size:10.5px;color:var(--mut);min-width:26px}
+input[type=text]{width:78px;text-align:right;font-family:var(--mono);font-size:13px;padding:4px 7px;
+  border:1px solid var(--brd);background:rgba(255,255,255,.05);color:var(--txt);border-radius:7px}
+input[type=text]:focus{border-color:var(--brd-hi);background:rgba(255,255,255,.08)}
+input[type=text]::placeholder{color:#5B5B57}
+input.txt{width:100%;text-align:left}
+select{width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--brd);background:rgba(255,255,255,.05);
+  color:var(--txt);margin-bottom:8px;border-radius:8px}
+select option{background:#212124;color:var(--txt)}
+.tog{display:flex;width:100%;border:1px solid var(--brd);border-radius:9px;overflow:hidden;margin:2px 0 9px}
+.tog button{flex:1;background:transparent;border:0;border-right:1px solid var(--brd);padding:6px;
+  font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;font-size:11.5px;color:var(--mut)}
+.tog button:last-child{border-right:0}
+.tog button.on{background:linear-gradient(135deg,var(--orange),var(--red));color:#1A0E08;font-weight:600}
+.tog.mini button{padding:4px 6px;font-size:11px}
+.trip{display:flex;gap:7px;margin:5px 0}
+.trip div{flex:1}
+.trip span{display:block;font-family:var(--mono);font-size:10px;color:var(--mut);margin-bottom:2px}
+.trip input{width:100%}
+.note-s{font-family:var(--mono);font-size:11px;color:var(--mut);line-height:1.55;
+  background:rgba(255,201,60,.06);border:1px solid rgba(255,201,60,.14);border-radius:9px;padding:7px 9px;margin:7px 0}
+.note-s b{color:var(--txt);font-weight:600}
+.lnk{background:transparent;border:0;padding:4px 0;font-family:var(--disp);text-transform:uppercase;
+  letter-spacing:.08em;font-size:11.5px;color:var(--yellow)}
+.xrow{display:flex;gap:6px;margin-bottom:6px}
+.xrow input.txt{flex:1;width:auto}
+.mini-b{border:1px solid var(--brd);background:var(--glass);font-family:var(--disp);text-transform:uppercase;
+  font-size:11px;letter-spacing:.06em;padding:4px 9px;color:var(--mut);border-radius:7px}
+.mini-b:hover{border-color:var(--brd-hi);color:var(--txt)}
+
+/* предупреждения */
+.warns{display:flex;flex-direction:column;gap:8px}
+.warn{display:flex;gap:10px;align-items:flex-start;padding:9px 13px;font-size:12.5px;line-height:1.42;border-radius:12px}
+.warn s{width:3px;align-self:stretch;flex:none;text-decoration:none;border-radius:2px}
+.warn.red{background:rgba(255,68,51,.09);border:1px solid rgba(255,68,51,.28);color:#FFB2A8}
+.warn.red s{background:var(--red)}
+.warn.amb{background:rgba(255,138,61,.09);border:1px solid rgba(255,138,61,.26);color:#FFC69A}
+.warn.amb s{background:var(--orange)}
+.warn.inf{background:rgba(255,201,60,.07);border:1px solid rgba(255,201,60,.20);color:#E9D48C}
+.warn.inf s{background:var(--yellow)}
+.warn.ok{background:rgba(255,216,107,.06);border:1px solid rgba(255,216,107,.20);color:#E9D48C}
+.warn.ok s{background:var(--ok)}
+
+/* карточки результатов */
+.outs{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:12px}
+.l2{display:flex;align-items:baseline;gap:6px;font-size:12.5px;padding:3.5px 0}
+.l2 .k{color:var(--mut)}
+.l2 .d{flex:1;border-bottom:1px dotted var(--hair);transform:translateY(-3px)}
+.l2 .v{font-family:var(--mono);font-size:12.5px;white-space:nowrap;color:var(--txt)}
+.v.pwr{color:var(--orange);font-weight:600} .v.trq{color:var(--yellow);font-weight:600}
+.v.red{color:var(--red);font-weight:600} .v.amb{color:var(--orange);font-weight:600}
+.total{display:flex;justify-content:space-between;align-items:baseline;margin:9px 0 5px;padding:9px 10px;
+  border-radius:10px;background:linear-gradient(135deg,rgba(255,138,61,.14),rgba(255,68,51,.10));
+  border:1px solid rgba(255,138,61,.25)}
+.total span{font-family:var(--disp);text-transform:uppercase;letter-spacing:.1em;font-size:14px}
+.total b{font-family:var(--mono);font-size:18px;color:#FFD8B0}
+.foot{font-size:11.5px;color:var(--mut);line-height:1.6;max-width:82ch;margin:2px 0 0}
+
+/* сравнение */
+.cmp{padding:0 22px 44px;max-width:1640px;margin:0 auto}
+.cmp-in{overflow-x:auto;border-radius:16px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:9px 14px;text-align:right;font-family:var(--mono);white-space:nowrap;border-bottom:1px solid var(--hair)}
+th{border-bottom:1px solid var(--brd-hi);font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;font-size:14px}
+td.k,th.k{text-align:left;font-family:var(--ui);color:var(--mut)}
+th.k{color:var(--txt)}
+td.best{background:rgba(255,201,60,.10);color:#FFE49E;font-weight:600;border-radius:6px}
+.cmp-open{background:transparent;border:0;font:inherit;color:var(--orange);text-transform:uppercase}
+.cmp-ft{display:flex;justify-content:space-between;gap:14px;padding:11px 4px 0;font-size:11.5px;color:var(--mut)}
+
+.hidden{display:none!important}
+
+@media (max-width:1100px){
+  .wrap{grid-template-columns:1fr}
+  .cluster{grid-template-columns:repeat(3,1fr)}
+  .cl:nth-child(3){border-right:0}
+}
+@media (max-width:640px){
+  header{padding:12px 12px 0}
+  .bar{flex-wrap:wrap;gap:10px;padding:10px 12px}
+  .wrap,.cmp{padding-left:12px;padding-right:12px}
+  .cluster{grid-template-columns:repeat(2,1fr)}
+  .cl:nth-child(3){border-right:1px solid var(--hair)}
+  .cl-v{font-size:24px}
+  input[type=text]{width:68px}
+}
+@media print{
+  body{background:#fff;color:#000}
+  header,.acts{display:none!important}
+  .glass,.card,.total,.warn{background:#fff;border-color:#ccc;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .wrap{grid-template-columns:1fr 1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<!--Сделал (тг)@FedorKkudrin-->
+<header>
+  <div class="bar glass">
+    <div>
+      <div class="mark">EV<b>·</b>BUILDER</div>
+      <div class="mark-s">Конфигуратор компонентов электротранспорта</div>
+    </div>
+    <div class="bar-sp"></div>
+    <div class="acts">
+      <div class="seg" id="curSeg"></div>
+      <div class="seg" id="viewSeg"></div>
+      <button class="btn" data-act="print">Печать</button>
+      <button class="btn" data-act="json">Экспорт JSON</button>
+      <button class="btn" data-act="import">Импорт</button>
+      <button class="btn pri" data-act="savefile">Сохранить копию файла</button>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs" data-dyn></nav>
+  <section class="cluster glass" id="cluster" data-dyn></section>
+</header>
+
+<main class="wrap" id="wrap">
+  <div class="col" id="inputs" data-dyn></div>
+  <div class="col" id="outputs" data-dyn></div>
+</main>
+
+<section class="cmp hidden" id="cmp" data-dyn></section>
+
+<input type="file" id="file" accept=".json,.html" class="hidden">
+<script id="seed" type="application/json">null</script>
+<!--Сделал (тг)@FedorKkudrin-->
+<script>
+"use strict";
+
+/* ================================================================
+   БАЗА КОМПЛЕКТУЮЩИХ — усреднённые каталожные значения.
+   Все поля правятся вручную: паспорт продавца всегда точнее.
+   Пункты "Свой ..." оставлены пустыми — впишите характеристики сами.
+   ================================================================ */
+var MOTORS = [
+  {id:"qs165",   label:"QS 165 (mid-drive, редуктор)", type:"mid", kv:65, rPhase:12, maxRpm:6000, maxPhaseA:700, contW:8000,  peakW:20000, kg:19, ratio:5.19, front:20, rear:23},
+  {id:"qs138-70",label:"QS 138 70H (mid-drive)",       type:"mid", kv:70, rPhase:18, maxRpm:5500, maxPhaseA:400, contW:3000,  peakW:8000,  kg:12, ratio:1,    front:12, rear:68},
+  {id:"qs138-90",label:"QS 138 90H (mid-drive)",       type:"mid", kv:60, rPhase:14, maxRpm:5000, maxPhaseA:500, contW:5000,  peakW:12000, kg:15, ratio:1,    front:12, rear:64},
+  {id:"qs180",   label:"QS 180 (mid-drive, редуктор)", type:"mid", kv:55, rPhase:9,  maxRpm:6000, maxPhaseA:900, contW:12000, peakW:30000, kg:26, ratio:4.6,  front:18, rear:24},
+  {id:"qs273-70",label:"QS 273 70H (мотор-колесо)",    type:"hub", kv:12, rPhase:55, maxRpm:1300, maxPhaseA:600, contW:8000,  peakW:20000, kg:22, ratio:1},
+  {id:"qs273-50",label:"QS 273 50H (мотор-колесо)",    type:"hub", kv:14, rPhase:70, maxRpm:1300, maxPhaseA:450, contW:5000,  peakW:12000, kg:17, ratio:1},
+  {id:"qs205-50",label:"QS 205 50H V3 (мотор-колесо)", type:"hub", kv:10, rPhase:80, maxRpm:1000, maxPhaseA:400, contW:3000,  peakW:8000,  kg:16, ratio:1},
+  {id:"qs260-45",label:"QS 260 45H (мотор-колесо)",    type:"hub", kv:13, rPhase:65, maxRpm:1200, maxPhaseA:500, contW:5000,  peakW:14000, kg:19, ratio:1},
+  {id:"custom",  label:"Свой мотор",                   type:"mid", kv:"", rPhase:"", maxRpm:"", maxPhaseA:"", contW:"", peakW:"", kg:"", ratio:"", front:"", rear:""}
+];
+var CONTROLLERS = [
+  {id:"custom",  label:"Свой контроллер",   maxV:"", maxPhaseA:"",  maxBattA:"",  kg:""},
+  {id:"nd72200", label:"Fardriver ND72200",  maxV:90,  maxPhaseA:200,  maxBattA:100, kg:1.6},
+  {id:"nd72260", label:"Fardriver ND72260",  maxV:90,  maxPhaseA:260,  maxBattA:130, kg:1.8},
+  {id:"nd72360", label:"Fardriver ND72360",  maxV:90,  maxPhaseA:360,  maxBattA:180, kg:2.2},
+  {id:"nd72450", label:"Fardriver ND72450",  maxV:90,  maxPhaseA:450,  maxBattA:225, kg:2.6},
+  {id:"nd72530", label:"Fardriver ND72530",  maxV:90,  maxPhaseA:530,  maxBattA:265, kg:2.9},
+  {id:"nd72680", label:"Fardriver ND72680",  maxV:90,  maxPhaseA:680,  maxBattA:340, kg:3.4},
+  {id:"nd72850", label:"Fardriver ND72850",  maxV:90,  maxPhaseA:850,  maxBattA:420, kg:4.0},
+  {id:"nd84360", label:"Fardriver ND84360",  maxV:105, maxPhaseA:360,  maxBattA:180, kg:2.2},
+  {id:"nd84530", label:"Fardriver ND84530",  maxV:105, maxPhaseA:530,  maxBattA:265, kg:2.9},
+  {id:"nd96360", label:"Fardriver ND96360",  maxV:120, maxPhaseA:360,  maxBattA:180, kg:2.4},
+  {id:"nd96530", label:"Fardriver ND96530",  maxV:120, maxPhaseA:530,  maxBattA:265, kg:3.1},
+  {id:"nd96680", label:"Fardriver ND96680",  maxV:120, maxPhaseA:680,  maxBattA:340, kg:3.6},
+  {id:"nd961200",label:"Fardriver ND961200", maxV:120, maxPhaseA:1200, maxBattA:600, kg:5.5}
+];
+var CELLS = [
+  {id:"custom", label:"Свой аккумулятор",        nom:"", max:"", min:""},
+  {id:"liion",  label:"Li-ion NMC 18650 / 21700", nom:3.6, max:4.2, min:3.0},
+  {id:"lifepo", label:"LiFePO4",                  nom:3.2, max:3.65,min:2.6},
+  {id:"lipo",   label:"Li-Po",                    nom:3.7, max:4.2, min:3.3}
+];
+
+/* ================================================================
+   УТИЛИТЫ
+   ================================================================ */
+function N(x,d){ var v = parseFloat(String(x).replace(",",".")); return isFinite(v) ? v : (d||0); }
+function fmt(x,d){ d = d===undefined?1:d; return isFinite(x) ? x.toLocaleString("ru-RU",{minimumFractionDigits:d,maximumFractionDigits:d}) : "—"; }
+function f0(x){ return fmt(x,0); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function money(x){ return x>0 ? f0(x)+" "+state.cur : "—"; }
+function uid(){ return "b"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function makeBuild(name){
+  var m = MOTORS[0], c = CONTROLLERS[0];
+  return {
+    id: uid(), name: name,
+    motor:{preset:m.id,label:m.label,type:m.type,kv:m.kv,rPhase:m.rPhase,maxRpm:m.maxRpm,maxPhaseA:m.maxPhaseA,contW:m.contW,peakW:m.peakW,kg:m.kg,ratio:m.ratio,tShaft:"",tGear:"",price:""},
+    ctrl:{preset:c.id,label:c.label,maxV:c.maxV,maxPhaseA:c.maxPhaseA,maxBattA:c.maxBattA,kg:c.kg,price:""},
+    batt:{name:"",chem:"custom",s:"",cellNom:"",cellMax:"",cellMin:"",ah:"",maxA:"",rInt:"",kg:"",chargerKw:"",price:""},
+    trans:{front:m.front,rear:m.rear},
+    wheel:{rim:17,width:150,aspect:60},
+    bike:{frameKg:55,riderKg:80,cda:0.55,crr:0.015,mu:0.8,soc:"nom",dod:90,etaM:90,etaC:97,etaD:95,kSat:90,fw:135},
+    extras:[{name:"Рама / маятник",price:""},{name:"Подвеска",price:""},{name:"Тормоза",price:""},{name:"Колёса и резина",price:""},{name:"Проводка, BMS, мелочь",price:""}]
+  };
+}
+
+/* ================================================================
+   РАСЧЁТ
+   ================================================================ */
+function compute(b){
+  var g=9.80665, rho=1.225;
+  var m=b.motor, c=b.ctrl, bt=b.batt, tr=b.trans, wh=b.wheel, bk=b.bike;
+
+  var s = Math.max(N(bt.s,1),1);
+  var vMax=s*N(bt.cellMax,4.2), vNom=s*N(bt.cellNom,3.6), vMin=s*N(bt.cellMin,3.0);
+  var vWork = bk.soc==="max"?vMax : bk.soc==="min"?vMin : vNom;
+
+  var kv=Math.max(N(m.kv,1),0.1), kt=9.5493/kv;
+  var rPh=N(m.rPhase,0)/1000, rInt=N(bt.rInt,0)/1000;
+  var iPh=Math.min(N(c.maxPhaseA,0), N(m.maxPhaseA,1e9));
+  var iBat=Math.min(N(c.maxBattA,0), N(bt.maxA,1e9));
+  var vSag=Math.max(vWork-iBat*rInt,1), sagPct=(vWork-vSag)/vWork*100;
+
+  var etaM=N(bk.etaM,90)/100, etaC=N(bk.etaC,97)/100, etaD=N(bk.etaD,95)/100;
+  var pElec=vSag*iBat, pShaft=pElec*etaC*etaM, pWheel=pShaft*etaD;
+
+  var isHub = m.type==="hub";
+  var chain = isHub?1:N(tr.rear,1)/Math.max(N(tr.front,1),0.001);
+  var gearbox = isHub?1:N(m.ratio,1);
+  var gearboxSafe = Math.max(gearbox,0.01);
+  var ratio = gearbox*chain;
+<!--Cделал (тг)@FedorKkudrin-->
+  var kSat=N(bk.kSat,90)/100;
+  var tMaxRaw=kt*iPh;
+  var tShaftIn=N(m.tShaft,0), tGearIn=isHub?0:N(m.tGear,0);
+  var tMax, tSrc;
+  if(!isHub && tGearIn>0){ tMax=tGearIn/gearboxSafe; tSrc="gear"; }
+  else if(tShaftIn>0){ tMax=tShaftIn; tSrc="shaft"; }
+  else { tMax=tMaxRaw*kSat; tSrc="calc"; }
+  var tGearOut = tMax*gearbox;
+
+  var vAvail=vSag*0.95;
+  var n1=Math.max(kv*(vAvail-iPh*rPh*1.5),10);
+  var nBase=kv*vAvail;
+  var nFw=nBase*(N(bk.fw,135)/100);
+  var nMech=N(m.maxRpm,1e9);
+  var nMax=Math.min(nFw,nMech);
+  var fwByMech = nFw>nMech;
+
+  var rW=(N(wh.rim,17)*25.4/2 + N(wh.width,150)*N(wh.aspect,60)/100)/1000;
+  var circ=2*Math.PI*rW;
+
+  var mass=N(bk.frameKg,0)+N(bk.riderKg,0)+N(m.kg,0)+N(bt.kg,0)+N(c.kg,0);
+  var massBike=mass-N(bk.riderKg,0);
+  var cda=N(bk.cda,0.55), crr=N(bk.crr,0.015), mu=N(bk.mu,0.8);
+  var fTr=mu*mass*g;
+
+  function torqueAt(n){
+    var tv = n<=n1 ? tMax : tMax*Math.max(0,(nMax-n)/Math.max(nMax-n1,1));
+    var w = 2*Math.PI*n/60;
+    var tp = n<1 ? tMax : pShaft/w;
+    return Math.max(0, Math.min(tMax,tv,tp));
+  }
+  function speedAt(n){ return circ*(n/ratio)/60; }
+  function forceAt(n){ return torqueAt(n)*ratio*etaD/rW; }
+  function resAt(v){ return 0.5*rho*cda*v*v + crr*mass*g; }
+
+  var tWheelMax=0, fWheelMax=0, i, n, STEPS=160;
+  for(i=0;i<=STEPS;i++){
+    n = nMax*i/STEPS;
+    var tW = torqueAt(n)*ratio*etaD, fW = forceAt(n);
+    if(tW>tWheelMax) tWheelMax=tW;
+    if(fW>fWheelMax) fWheelMax=fW;
+  }
+
+  var vTop=0;
+  for(i=0;i<=STEPS;i++){
+    n = nMax*i/STEPS;
+    var v=speedAt(n)*3.6;
+    if(forceAt(n)>=resAt(speedAt(n))) vTop=v;
+  }
+  var vRpm=speedAt(nMax)*3.6;
+  var dragLim = vTop < vRpm-0.5;
+  var vTopF = Math.min(vTop>0?vTop:vRpm, vRpm);
+  var vNoFw = speedAt(Math.min(nBase,nMech))*3.6;
+
+  var t60=null,t100=null,tt=0,vv=0,dt=0.005;
+  while(tt<60){
+    var nn=vv*60*ratio/circ;
+    if(nn>nMax) break;
+    var f=Math.min(forceAt(nn),fTr);
+    var a=(f-resAt(vv))/mass;
+    if(a<=0.01 && vv>1) break;
+    vv+=a*dt; tt+=dt;
+    if(t60===null && vv>=60/3.6) t60=tt;
+    if(t100===null && vv>=100/3.6) t100=tt;
+    if(t100!==null && vv>vTopF/3.6-0.4) break;
+  }
+
+  var nClimb=Math.min((10/3.6)*60*ratio/circ, nMax);
+  var fClimb=Math.min(forceAt(nClimb),fTr), grade=0;
+  for(var deg=0;deg<=45;deg+=0.25){
+    var th=deg*Math.PI/180;
+    if(fClimb >= mass*g*(Math.sin(th)+crr*Math.cos(th))) grade=Math.tan(th)*100;
+  }
+
+  var kwh=vNom*N(bt.ah,0)/1000, usable=kwh*(N(bk.dod,90)/100);
+  var cReq = N(bt.ah,0)>0 ? iBat/N(bt.ah,0) : 0;
+  var cMax = N(bt.ah,0)>0 ? N(bt.maxA,0)/N(bt.ah,0) : 0;
+  function rangeAt(kmh){
+    var vv2=kmh/3.6, pRoad=resAt(vv2)*vv2, pB=pRoad/(etaD*etaM*etaC), wpk=pB/kmh;
+    return {wpk:wpk, km: wpk>0 ? usable*1000/wpk : 0};
+  }
+  var r50=rangeAt(50), r70=rangeAt(70), r90=rangeAt(90);
+  var chargeH = N(bt.chargerKw,0)>0 ? kwh/N(bt.chargerKw,0) : null;
+
+  var extras=0;
+  (b.extras||[]).forEach(function(e){ extras+=N(e.price,0); });
+  var total=N(m.price,0)+N(c.price,0)+N(bt.price,0)+extras;
+
+  var haveCtrl = N(c.maxV,0)>0, haveBattA = N(bt.maxA,0)>0, haveMotA = N(m.maxPhaseA,0)>0;
+  var warn=[];
+  if(haveCtrl && vMax>N(c.maxV,0)) warn.push({l:"red",t:"Батарея на полном заряде "+fmt(vMax,1)+" В — выше предела контроллера "+f0(N(c.maxV,0))+" В. Меньше ячеек или другой контроллер."});
+  else if(haveCtrl && vMax>N(c.maxV,0)*0.95) warn.push({l:"amb",t:"Полный заряд "+fmt(vMax,1)+" В почти упирается в предел контроллера "+f0(N(c.maxV,0))+" В — запаса нет."});
+  if(haveBattA && N(c.maxBattA,0)>0 && N(bt.maxA,0)<N(c.maxBattA,0)) warn.push({l:"amb",t:"Ток режет батарея: "+f0(N(bt.maxA,0))+" А против "+f0(N(c.maxBattA,0))+" А у контроллера. Теряется "+f0((1-N(bt.maxA,0)/Math.max(N(c.maxBattA,0),1))*100)+" % мощности."});
+  if(haveMotA && N(c.maxPhaseA,0)>0 && N(m.maxPhaseA,0)<N(c.maxPhaseA,0)) warn.push({l:"amb",t:"Фазный ток режет мотор: "+f0(N(m.maxPhaseA,0))+" А против "+f0(N(c.maxPhaseA,0))+" А у контроллера."});
+  if(N(m.peakW,0)>0 && pShaft>N(m.peakW,1e9)) warn.push({l:"red",t:"На валу "+fmt(pShaft/1000,1)+" кВт при паспортном пике "+fmt(N(m.peakW,0)/1000,1)+" кВт. Так можно только секундами."});
+  else if(N(m.contW,0)>0 && pShaft>N(m.contW,1e9)*2) warn.push({l:"amb",t:"Пик "+fmt(pShaft/1000,1)+" кВт — более чем вдвое выше длительных "+fmt(N(m.contW,0)/1000,1)+" кВт. Точно не треснешь?"});
+  if(sagPct>12 && rInt>0) warn.push({l:"amb",t:"Просадка под полным током "+fmt(sagPct,1)+" % (до "+fmt(vSag,1)+" В). Внутреннее сопротивление сборки великовато."});
+  if(cReq>cMax && cMax>0) warn.push({l:"red",t:"Требуется "+fmt(cReq,1)+" C, батарея отдаёт "+fmt(cMax,1)+" C."});
+  if(fwByMech && nMech<1e8) warn.push({l:"inf",t:"Механический потолок "+f0(nMech)+" об/мин наступает раньше электрического ("+f0(nFw)+" об/мин) — весь запас ослабления поля не выберется."});
+  if(fWheelMax>fTr && fTr>0) warn.push({l:"inf",t:"Тяга "+f0(fWheelMax)+" Н выше принятого предела сцепления/вилли "+f0(fTr)+" Н — Бернаут на низах)))"});
+
+  return {vMax:vMax,vNom:vNom,vMin:vMin,vWork:vWork,vSag:vSag,sagPct:sagPct,s:s,
+    kt:kt,iPh:iPh,iBat:iBat,pElec:pElec,pShaft:pShaft,pWheel:pWheel,
+    tMaxRaw:tMaxRaw,tMax:tMax,tSrc:tSrc,tGearOut:tGearOut,tWheelMax:tWheelMax,fWheelMax:fWheelMax,fTr:fTr,
+    fUse:Math.min(fWheelMax,fTr),tractionLim:fWheelMax>fTr,
+    n1:n1,nBase:nBase,nFw:nFw,nMax:nMax,nMech:nMech,fwByMech:fwByMech,
+    ratio:ratio,gearbox:gearbox,chain:chain,isHub:isHub,rW:rW,circ:circ,
+    mass:mass,massBike:massBike,kmhN1:speedAt(n1)*3.6,
+    vTop:vTopF,vRpm:vRpm,vNoFw:vNoFw,dragLim:dragLim,t60:t60,t100:t100,grade:grade,
+    kwh:kwh,usable:usable,cReq:cReq,cMax:cMax,r50:r50,r70:r70,r90:r90,chargeH:chargeH,
+    total:total,extras:extras,perKw:pWheel>0?total/(pWheel/1000):0,perKwh:kwh>0?total/kwh:0,
+    wPerKg:mass>0?pWheel/mass:0,warn:warn};
+}
+
+/* ================================================================
+   СОСТОЯНИЕ И ХРАНЕНИЕ
+   ================================================================ */
+var KEY="evbuild.v2";
+var state={builds:[makeBuild("Сборка 1")],active:0,cur:"₽",view:"build",adv:false,ts:Date.now()};
+var mem=null, saveTimer=null, where="";
+
+function pack(){ state.ts=Date.now(); return JSON.stringify({builds:state.builds,active:state.active,cur:state.cur,ts:state.ts}); }
+function apply(d){
+  if(!d||!d.builds||!d.builds.length) return false;
+  state.builds=d.builds; state.active=Math.min(d.active||0,d.builds.length-1);
+  state.cur=d.cur||"₽"; state.ts=d.ts||0; return true;
+}
+function saveNow(){
+  var s=pack(), okLocal=false, okApp=false;
+  try{ localStorage.setItem(KEY,s); okLocal=true; }catch(e){ mem=s; }
+  if(window.storage&&window.storage.set){
+    try{ var pr=window.storage.set(KEY,s); if(pr&&pr.catch) pr.catch(function(){}); okApp=true; }catch(e2){}
+  }
+  where = okApp ? "хранилище приложения" : okLocal ? "браузер помнит этот файл" : "не сохраняется — жмите «Сохранить копию файла»";
+  var el=document.getElementById("savedTag");
+  if(el) el.textContent = (okApp||okLocal ? "сохранено "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+" · " : "") + where;
+}
+function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,500); }
+
+function boot(){
+  var seed=null, local=null;
+  try{ var raw=document.getElementById("seed").textContent.trim(); if(raw&&raw!=="null") seed=JSON.parse(raw); }catch(e){}
+  try{ var l=localStorage.getItem(KEY); if(l) local=JSON.parse(l); }catch(e){}
+  var pick = (local&&seed) ? ((local.ts||0)>=(seed.ts||0)?local:seed) : (local||seed);
+  if(pick) apply(pick);
+  if(window.storage&&window.storage.get){
+    window.storage.get(KEY).then(function(r){
+      if(r&&r.value){ var d=JSON.parse(r.value); if((d.ts||0)>(state.ts||0)){ apply(d); renderAll(); } }
+    }).catch(function(){});
+  }
+}
+
+/* ================================================================
+   РЕНДЕР
+   ================================================================ */
+var $=function(id){ return document.getElementById(id); };
+function cur(){ return state.builds[Math.min(state.active,state.builds.length-1)]; }
+
+function set(path,val){
+  var p=path.split("."), o=cur(), i;
+  for(i=0;i<p.length-1;i++) o=o[p[i]];
+  o[p[p.length-1]]=val;
+}
+
+function rowHtml(label,path,unit,hint,val,idAttr){
+  return '<label class="row"><span class="lb">'+label+(hint?'<i>'+hint+'</i>':'')+'</span>'+
+    '<span class="dt"></span><span class="fd">'+
+    '<input type="text" inputmode="decimal" data-p="'+path+'" value="'+esc(val)+'" placeholder="—">'+
+    (unit?'<span class="un">'+unit+'</span>':'<span class="un"></span>')+'</span></label>';
+}
+
+function ratioNote(b,r){
+  var s;
+  if(!r.isHub){
+    s = 'редуктор '+fmt(r.gearbox,2)+' × цепь '+fmt(r.chain,2)+' = <b>'+fmt(r.ratio,2)+' : 1</b>';
+  } else {
+    s = 'прямой привод, передаточное <b>1 : 1</b>';
+  }
+  s += '<br>без ослабления поля: <b>'+f0(r.vNoFw)+' км/ч</b> · с ослаблением поля: <b>'+f0(r.vRpm)+' км/ч</b>';
+  return s;
+}
+
+function renderTabs(){
+  var h="";
+  state.builds.forEach(function(b,i){
+    var r=compute(b);
+    h+='<div class="tab'+(i===state.active&&state.view==="build"?" on":"")+'">'+
+       '<button class="go" data-act="tab" data-i="'+i+'"><span class="nm">'+esc(b.name)+'</span>'+
+       '<span class="kw">'+fmt(r.pWheel/1000,1)+' кВт · '+f0(r.tWheelMax)+' Нм · '+f0(r.vTop)+' км/ч</span></button>'+
+       (state.builds.length>1?'<button class="rm" data-act="del" data-i="'+i+'" title="Удалить сборку">×</button>':'')+
+       '</div>';
+  });
+  h+='<button class="tab-add" data-act="add">+ сборка</button>';
+  h+='<span class="saved" id="savedTag">'+(where?"хранится в: "+where:"")+'</span>';
+  $("tabs").innerHTML=h;
+
+  var cs="";
+  ["₽","€","$"].forEach(function(c){ cs+='<button data-act="cur" data-v="'+c+'" class="'+(state.cur===c?"on":"")+'">'+c+'</button>'; });
+  $("curSeg").innerHTML=cs;
+  $("viewSeg").innerHTML='<button data-act="view" data-v="build" class="'+(state.view==="build"?"on":"")+'">Сборка</button>'+
+    '<button data-act="view" data-v="cmp" class="'+(state.view==="cmp"?"on":"")+'">Сравнение</button>';
+}
+
+function renderInputs(){
+  var b=cur(), r=compute(b), h="";
+
+  /* 01 мотор */
+  h+='<section class="card glass"><h3><span class="ix">01</span>Мотор<span class="sp"><input type="text" class="txt" data-p="name" value="'+esc(b.name)+'" style="width:118px;text-align:right"></span></h3><div class="pad">';
+  h+='<select data-sel="motor">'+MOTORS.map(function(m){return '<option value="'+m.id+'"'+(m.id===b.motor.preset?" selected":"")+'>'+m.label+'</option>';}).join("")+'</select>';
+  h+='<div class="tog"><button data-act="mtype" data-v="mid" class="'+(b.motor.type==="mid"?"on":"")+'">mid-drive</button><button data-act="mtype" data-v="hub" class="'+(b.motor.type==="hub"?"on":"")+'">Мотор-колесо</button></div>';
+  h+=rowHtml("KV","motor.kv","об/мин·В⁻¹","обороты на вольт без нагрузки",b.motor.kv);
+  h+=rowHtml("Сопротивление фазы","motor.rPhase","мОм","",b.motor.rPhase);
+  h+=rowHtml("Предел оборотов","motor.maxRpm","об/мин","",b.motor.maxRpm);
+  h+=rowHtml("Макс. фазный ток","motor.maxPhaseA","А","",b.motor.maxPhaseA);
+  h+=rowHtml("Мощность длительно","motor.contW","Вт","",b.motor.contW);
+  h+=rowHtml("Мощность пик","motor.peakW","Вт","",b.motor.peakW);
+  if(b.motor.type==="mid"){
+    h+=rowHtml("Редуктор в моторе","motor.ratio",": 1","1 — если редуктора нет",b.motor.ratio);
+    h+=rowHtml("Крутящий момент на валу","motor.tShaft","Нм","до редуктора · пусто — посчитаем по Kt и току",b.motor.tShaft||"");
+    h+=rowHtml("Крутящий момент на редукторе","motor.tGear","Нм","после редуктора · если знаете только его",b.motor.tGear||"");
+  } else {
+    h+=rowHtml("Крутящий момент","motor.tShaft","Нм","по паспорту · пусто — посчитаем по Kt и току",b.motor.tShaft||"");
+  }
+  h+=rowHtml("Масса","motor.kg","кг","",b.motor.kg);
+  h+=rowHtml("Цена","motor.price",state.cur,"",b.motor.price);
+  h+='</div></section>';
+
+  /* 02 контроллер */
+  h+='<section class="card glass"><h3><span class="ix">02</span>Контроллер</h3><div class="pad">';
+  h+='<select data-sel="ctrl">'+CONTROLLERS.map(function(c){return '<option value="'+c.id+'"'+(c.id===b.ctrl.preset?" selected":"")+'>'+c.label+'</option>';}).join("")+'</select>';
+  h+=rowHtml("Предел напряжения","ctrl.maxV","В","",b.ctrl.maxV);
+  h+=rowHtml("Фазный ток","ctrl.maxPhaseA","А","",b.ctrl.maxPhaseA);
+  h+=rowHtml("Ток батареи","ctrl.maxBattA","А","",b.ctrl.maxBattA);
+  h+=rowHtml("Масса","ctrl.kg","кг","",b.ctrl.kg);
+  h+=rowHtml("Цена","ctrl.price",state.cur,"",b.ctrl.price);
+  h+='</div></section>';
+
+  /* 03 батарея */
+  h+='<section class="card glass"><h3><span class="ix">03</span>Батарея</h3><div class="pad">';
+  h+='<input type="text" class="txt" data-p="batt.name" value="'+esc(b.batt.name)+'" placeholder="название сборки аккумулятора" style="margin-bottom:8px">';
+  h+='<select data-sel="chem">'+CELLS.map(function(c){return '<option value="'+c.id+'"'+(c.id===b.batt.chem?" selected":"")+'>'+c.label+'</option>';}).join("")+'</select>';
+  h+=rowHtml("Ячеек последовательно","batt.s","s","",b.batt.s);
+  h+='<div class="trip"><div><span>мин, В</span><input type="text" inputmode="decimal" data-p="batt.cellMin" value="'+esc(b.batt.cellMin)+'" placeholder="—"></div>'+
+     '<div><span>ном, В</span><input type="text" inputmode="decimal" data-p="batt.cellNom" value="'+esc(b.batt.cellNom)+'" placeholder="—"></div>'+
+     '<div><span>макс, В</span><input type="text" inputmode="decimal" data-p="batt.cellMax" value="'+esc(b.batt.cellMax)+'" placeholder="—"></div></div>';
+  h+='<div class="note-s" id="voltStrip">'+fmt(r.vMin,1)+' В — <b>'+fmt(r.vNom,1)+' В</b> — '+fmt(r.vMax,1)+' В</div>';
+  h+=rowHtml("Ёмкость","batt.ah","А·ч","",b.batt.ah);
+  h+='<label class="row"><span class="lb">Токоотдача<i id="crateHint">'+(N(b.batt.ah,0)>0?"это "+fmt(r.cMax,1)+" C":"впишите ёмкость, чтобы увидеть C")+'</i></span><span class="dt"></span>'+
+     '<span class="fd"><input type="text" inputmode="decimal" data-p="batt.maxA" value="'+esc(b.batt.maxA)+'" placeholder="—"><span class="un">А</span></span></label>';
+  h+=rowHtml("Внутреннее сопротивление","batt.rInt","мОм","",b.batt.rInt);
+  h+=rowHtml("Масса","batt.kg","кг","",b.batt.kg);
+  h+=rowHtml("Зарядное","batt.chargerKw","кВт","",b.batt.chargerKw);
+  h+=rowHtml("Цена","batt.price",state.cur,"",b.batt.price);
+  h+='</div></section>';
+
+  /* 04 трансмиссия */
+  h+='<section class="card glass"><h3><span class="ix">04</span>'+(r.isHub?"Колесо":"Трансмиссия и колесо")+'</h3><div class="pad">';
+  if(!r.isHub){
+    h+=rowHtml("Звезда на моторе","trans.front","зуб.","",b.trans.front);
+    h+=rowHtml("Звезда на колесе","trans.rear","зуб.","",b.trans.rear);
+  }
+  h+='<div class="note-s" id="ratioStrip">'+ratioNote(b,r)+'</div>';
+  h+=rowHtml("Диск","wheel.rim","″","",b.wheel.rim);
+  h+=rowHtml("Ширина резины","wheel.width","мм","",b.wheel.width);
+  h+=rowHtml("Профиль","wheel.aspect","%","",b.wheel.aspect);
+  h+='<div class="note-s" id="rWheelStrip">радиус качения <b>'+f0(r.rW*1000)+' мм</b>, длина окружности '+fmt(r.circ,2)+' м</div>';
+  h+='</div></section>';
+
+  /* 05 мотоцикл */
+  h+='<section class="card glass"><h3><span class="ix">05</span>Мотоцикл и условия</h3><div class="pad">';
+  h+=rowHtml("Масса без мотора и батареи","bike.frameKg","кг","",b.bike.frameKg);
+  h+=rowHtml("Пилот с экипировкой","bike.riderKg","кг","",b.bike.riderKg);
+  h+='<div class="note-s" id="massStrip">снаряжённая '+f0(r.massBike)+' кг · с пилотом <b>'+f0(r.mass)+' кг</b></div>';
+  h+='<div style="font-size:12.5px;margin-top:6px">Заряд батареи для расчёта</div>';
+  h+='<div class="tog mini">'+[["min","низ"],["nom","номинал"],["max","полный"]].map(function(p){
+      return '<button data-act="soc" data-v="'+p[0]+'" class="'+(b.bike.soc===p[0]?"on":"")+'">'+p[1]+'</button>';}).join("")+'</div>';
+  h+='<button class="lnk" data-act="adv">'+(state.adv?"− свернуть допущения":"+ допущения расчёта")+'</button>';
+  if(state.adv){
+    h+=rowHtml("Cd·A","bike.cda","м²","0,45 лёжа · 0,55 нейкед · 0,75 прямая посадка",b.bike.cda);
+    h+=rowHtml("Коэффициент качения","bike.crr","","",b.bike.crr);
+    h+=rowHtml("Предел сцепления / вилли","bike.mu","×mg","доля веса, реализуемая в тягу",b.bike.mu);
+    h+=rowHtml("КПД мотора","bike.etaM","%","",b.bike.etaM);
+    h+=rowHtml("КПД контроллера","bike.etaC","%","",b.bike.etaC);
+    h+=rowHtml("КПД трансмиссии","bike.etaD","%","",b.bike.etaD);
+    h+=rowHtml("Момент с учётом насыщения","bike.kSat","%","доля от Kt·I",b.bike.kSat);
+    h+=rowHtml("Ослабление поля","bike.fw","%","135 % ≈ типовой запас FOC",b.bike.fw);
+    h+=rowHtml("Глубина разряда","bike.dod","%","",b.bike.dod);
+  }
+  h+='</div></section>';
+
+  /* 06 прочее */
+  h+='<section class="card glass"><h3><span class="ix">06</span>Прочие расходы<span class="sp"><button class="mini-b" data-act="xadd">+ строка</button></span></h3><div class="pad">';
+  b.extras.forEach(function(e,i){
+    h+='<div class="xrow"><input type="text" class="txt" data-p="extras.'+i+'.name" value="'+esc(e.name)+'" placeholder="что покупаем">'+
+       '<input type="text" inputmode="decimal" data-p="extras.'+i+'.price" value="'+esc(e.price)+'" placeholder="—" style="width:96px">'+
+       '<button class="mini-b" data-act="xdel" data-i="'+i+'">×</button></div>';
+  });
+  h+='<div class="note-s" id="extrasTotal">прочее: <b>'+money(r.extras)+'</b></div>';
+  h+='</div></section>';
+
+  $("inputs").innerHTML=h;
+}
+
+/* --- лёгкое обновление подсказок без перерисовки инпутов (не теряет фокус курсора) --- */
+function updateLiveHints(){
+  var b=cur(), r=compute(b), el;
+  el=$("voltStrip"); if(el) el.innerHTML=fmt(r.vMin,1)+' В — <b>'+fmt(r.vNom,1)+' В</b> — '+fmt(r.vMax,1)+' В';
+  el=$("crateHint"); if(el) el.textContent = N(b.batt.ah,0)>0 ? "это "+fmt(r.cMax,1)+" C" : "впишите ёмкость, чтобы увидеть C";
+  el=$("ratioStrip"); if(el) el.innerHTML=ratioNote(b,r);
+  el=$("rWheelStrip"); if(el) el.innerHTML='радиус качения <b>'+f0(r.rW*1000)+' мм</b>, длина окружности '+fmt(r.circ,2)+' м';
+  el=$("massStrip"); if(el) el.innerHTML='снаряжённая '+f0(r.massBike)+' кг · с пилотом <b>'+f0(r.mass)+' кг</b>';
+  el=$("extrasTotal"); if(el) el.innerHTML='прочее: <b>'+money(r.extras)+'</b>';
+}
+
+/* --- кластер --- */
+function renderCluster(r){
+  function cell(k,v,u,s,cls){
+    return '<div class="cl '+(cls||"")+'"><div class="cl-k">'+k+'</div><div class="cl-v">'+v+(u?'<u>'+u+'</u>':'')+'</div><div class="cl-s">'+s+'</div></div>';
+  }
+  $("cluster").innerHTML=
+    cell("Мощность на колесе",fmt(r.pWheel/1000,1),"кВт","из батареи "+fmt(r.pElec/1000,1)+" кВт","pwr")+
+    cell("Момент на колесе",f0(r.tWheelMax),"Нм","на валу "+fmt(r.tMax,1)+" Нм","trq")+
+    cell("Максималка",f0(r.vTop),"км/ч",r.dragLim?"предел — воздух":"предел — обороты")+
+    cell("Разгон 0–100",r.t100?fmt(r.t100,1):"—","с",r.t60?"0–60 за "+fmt(r.t60,1)+" с":"не набирает")+
+    cell("Запас хода",f0(r.r70.km),"км","на 70 км/ч · "+fmt(r.usable,1)+" кВт·ч")+
+    cell("Смета",money(r.total),"",r.perKw>0?f0(r.perKw)+" "+state.cur+" за кВт":"цены не заполнены");
+}
+
+/* --- карточки результатов --- */
+function l2(k,v,cls){ return '<div class="l2"><span class="k">'+k+'</span><span class="d"></span><span class="v'+(cls?" "+cls:"")+'">'+v+'</span></div>'; }
+
+function renderOutputs(){
+  var b=cur(), r=compute(b), h="";
+
+  h+='<div class="warns">';
+  if(!r.warn.length) h+='<div class="warn ok"><s></s>Конфликтов между компонентами не видно, ставлю "лосяру" 👍.</div>';
+  r.warn.forEach(function(w){ h+='<div class="warn '+w.l+'"><s></s>'+w.t+'</div>'; });
+  h+='</div>';
+
+  h+='<div class="outs">';
+
+  h+='<section class="card glass"><h3><span class="ix">A</span>Электрика</h3><div class="pad">'+
+    l2("Рабочее напряжение",fmt(r.vWork,1)+" В")+
+    l2("Просадка под полным током",fmt(r.vSag,1)+" В (−"+fmt(r.sagPct,1)+" %)",r.sagPct>12?"red":"")+
+    l2("Ток батареи",f0(r.iBat)+" А")+
+    l2("Фазный ток",f0(r.iPh)+" А")+
+    l2("Мощность из батареи",fmt(r.pElec/1000,1)+" кВт")+
+    l2("Мощность на валу",fmt(r.pShaft/1000,1)+" кВт")+
+    l2("Мощность на колесе",fmt(r.pWheel/1000,1)+" кВт","pwr")+
+    l2("Нагрузка на батарею",fmt(r.cReq,1)+" C из "+fmt(r.cMax,1)+" C",r.cReq>r.cMax?"red":"")+
+    '</div></section>';
+
+  var tLabel = r.tSrc==="shaft" ? "Момент на валу (по паспорту)"
+             : r.tSrc==="gear"  ? "Момент на валу (из паспорта редуктора)"
+             : "Момент на валу (с поправкой на насыщение)";
+  h+='<section class="card glass"><h3><span class="ix">B</span>Момент</h3><div class="pad">'+
+    l2("Постоянная момента Kt",fmt(r.kt,3)+" Нм/А")+
+    l2("Момент на валу по Kt·I (справочно)",fmt(r.tMaxRaw,1)+" Нм")+
+    l2(tLabel,fmt(r.tMax,1)+" Нм",r.tSrc!=="calc"?"trq":"")+
+    (!r.isHub?l2("Момент на редукторе"+(r.tSrc==="gear"?" (по паспорту)":""),fmt(r.tGearOut,1)+" Нм"):"")+
+    l2("Передаточное отношение",fmt(r.ratio,2)+" : 1")+
+    l2("Момент на колесе",f0(r.tWheelMax)+" Нм","trq")+
+    l2("Тяга на пятне контакта",f0(r.fWheelMax)+" Н")+
+    l2("Принятый предел сцепления",f0(r.fTr)+" Н",r.tractionLim?"amb":"")+
+    l2("Реализуемая тяга",f0(r.fUse)+" Н")+
+    l2("Максимальный подъём",(r.grade>=99?"> 100":f0(r.grade))+" %")+
+    '</div></section>';
+
+  h+='<section class="card glass"><h3><span class="ix">C</span>Обороты и скорость</h3><div class="pad">'+
+    l2("Конец полки момента",f0(r.n1)+" об/мин · "+f0(r.kmhN1)+" км/ч")+
+    l2("Холостые на этом напряжении",f0(r.nBase)+" об/мин")+
+    l2("Потолок с ослаблением поля",f0(r.nFw)+" об/мин",r.fwByMech?"amb":"")+
+    l2("Механический предел мотора",f0(r.nMech)+" об/мин")+
+    l2("Рабочий потолок",f0(r.nMax)+" об/мин")+
+    l2("Скорость без ослабления поля",f0(r.vNoFw)+" км/ч")+
+    l2("Скорость с ослаблением поля",f0(r.vRpm)+" км/ч","trq")+
+    l2("Расчётная максималка",f0(r.vTop)+" км/ч","pwr")+
+    l2("0–60 / 0–100",(r.t60?fmt(r.t60,1):"—")+" / "+(r.t100?fmt(r.t100,1):"—")+" с")+
+    l2("Удельная мощность",f0(r.wPerKg)+" Вт/кг")+
+    '</div></section>';
+
+  h+='<section class="card glass"><h3><span class="ix">D</span>Энергия</h3><div class="pad">'+
+    l2("Ёмкость",fmt(r.kwh,2)+" кВт·ч")+
+    l2("Полезная ёмкость",fmt(r.usable,2)+" кВт·ч")+
+    l2("50 км/ч",f0(r.r50.wpk)+" Вт·ч/км → "+f0(r.r50.km)+" км")+
+    l2("70 км/ч",f0(r.r70.wpk)+" Вт·ч/км → "+f0(r.r70.km)+" км")+
+    l2("90 км/ч",f0(r.r90.wpk)+" Вт·ч/км → "+f0(r.r90.km)+" км")+
+    l2("Зарядка 0 → 100 %",r.chargeH?fmt(r.chargeH,1)+" ч":"—")+
+    l2("Масса батареи",f0(N(b.batt.kg,0))+" кг")+
+    l2("Масса с пилотом",f0(r.mass)+" кг")+
+    '</div></section>';
+
+  h+='<section class="card glass"><h3><span class="ix">E</span>Смета</h3><div class="pad">'+
+    l2("Мотор — "+esc(b.motor.label),money(N(b.motor.price,0)))+
+    l2("Контроллер — "+esc(b.ctrl.label),money(N(b.ctrl.price,0)))+
+    l2("Батарея — "+esc(b.batt.name||"без названия"),money(N(b.batt.price,0)))+
+    l2("Прочее",money(r.extras))+
+    '<div class="total"><span>Итого</span><b>'+money(r.total)+'</b></div>'+
+    l2("За киловатт на колесе",r.perKw>0?f0(r.perKw)+" "+state.cur:"—")+
+    l2("За киловатт-час батареи",r.perKwh>0?f0(r.perKwh)+" "+state.cur:"—")+
+    '</div></section>';
+
+  h+='</div>';
+
+  h+='<p class="foot">Значения в выпадающих списках — усреднённые по каталогам, это отправная точка: перед покупкой сверьте KV, фазный ток и передаточное редуктора с паспортом продавца и поправьте поля. Если в моторе указан крутящий момент по паспорту (на валу или на редукторе), расчёт берёт его напрямую вместо формулы Kt·I — так точнее. Линейное падение момента в зоне ослабления поля и постоянные КПД всё равно дают оценку сверху — реальные цифры проверяются на диностенде и обычно оказываются на 5–15 % ниже.</p>';
+
+  $("outputs").innerHTML=h;
+  renderCluster(r);
+}
+
+/* --- сравнение --- */
+function renderCmp(){
+  var all=state.builds.map(function(b){ return {b:b,r:compute(b)}; });
+  var rows=[
+    {k:"Мотор",v:function(x){return x.b.motor.label;},t:1},
+    {k:"Контроллер",v:function(x){return x.b.ctrl.label;},t:1},
+    {k:"Батарея",v:function(x){return f0(x.r.s)+"s · "+f0(N(x.b.batt.ah,0))+" А·ч · "+fmt(x.r.kwh,2)+" кВт·ч";},t:1},
+    {k:"Напряжение номинальное",v:function(x){return fmt(x.r.vNom,1)+" В";},t:1},
+    {k:"Передаточное",v:function(x){return fmt(x.r.ratio,2)+" : 1";},t:1},
+    {k:"Мощность на колесе",v:function(x){return fmt(x.r.pWheel/1000,1)+" кВт";},n:function(x){return x.r.pWheel;}},
+    {k:"Момент на колесе",v:function(x){return f0(x.r.tWheelMax)+" Нм";},n:function(x){return x.r.tWheelMax;}},
+    {k:"Реализуемая тяга",v:function(x){return f0(x.r.fUse)+" Н";},n:function(x){return x.r.fUse;}},
+    {k:"Скорость без ослабления поля",v:function(x){return f0(x.r.vNoFw)+" км/ч";},n:function(x){return x.r.vNoFw;}},
+    {k:"Скорость с ослаблением поля",v:function(x){return f0(x.r.vRpm)+" км/ч";},n:function(x){return x.r.vRpm;}},
+    {k:"Расчётная максималка",v:function(x){return f0(x.r.vTop)+" км/ч";},n:function(x){return x.r.vTop;}},
+    {k:"0–100 км/ч",v:function(x){return x.r.t100?fmt(x.r.t100,1)+" с":"—";},n:function(x){return x.r.t100?-x.r.t100:-999;}},
+    {k:"Подъём",v:function(x){return (x.r.grade>=99?"> 100":f0(x.r.grade))+" %";},n:function(x){return x.r.grade;}},
+    {k:"Запас хода 70 км/ч",v:function(x){return f0(x.r.r70.km)+" км";},n:function(x){return x.r.r70.km;}},
+    {k:"Масса с пилотом",v:function(x){return f0(x.r.mass)+" кг";},n:function(x){return -x.r.mass;}},
+    {k:"Удельная мощность",v:function(x){return f0(x.r.wPerKg)+" Вт/кг";},n:function(x){return x.r.wPerKg;}},
+    {k:"Смета",v:function(x){return money(x.r.total);},n:function(x){return x.r.total>0?-x.r.total:-1e12;}},
+    {k:"Цена за кВт",v:function(x){return x.r.perKw>0?f0(x.r.perKw)+" "+state.cur:"—";},n:function(x){return x.r.perKw>0?-x.r.perKw:-1e12;}},
+    {k:"Замечания",v:function(x){
+        var red=x.r.warn.filter(function(w){return w.l==="red";}).length;
+        var amb=x.r.warn.filter(function(w){return w.l==="amb";}).length;
+        return red?red+" критичных":amb?amb+" предупреждений":"нет";},t:1}
+  ];
+  var h='<div class="cmp-in glass"><table><thead><tr><th class="k">Показатель</th>';
+  all.forEach(function(x,i){ h+='<th><button class="cmp-open" data-act="tab" data-i="'+i+'">'+esc(x.b.name)+'</button></th>'; });
+  h+='</tr></thead><tbody>';
+  rows.forEach(function(row){
+    var best=-1;
+    if(!row.t && all.length>1){
+      var vals=all.map(row.n), mx=Math.max.apply(null,vals);
+      if(isFinite(mx)) best=vals.indexOf(mx);
+    }
+    h+='<tr><td class="k">'+row.k+'</td>';
+    all.forEach(function(x,i){ h+='<td class="'+(i===best?"best":"")+'">'+esc(row.v(x))+'</td>'; });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div><div class="cmp-ft"><span>Лучшее в строке подсвечено. Для сметы и цены за киловатт лучшим считается меньшее.</span><button class="mini-b" data-act="reset">Очистить все сборки</button></div>';
+  $("cmp").innerHTML=h;
+}
+<!--Сделал (tг)@FedorKkudrin-->
+function renderAll(){
+  renderTabs();
+  var buildView = state.view==="build";
+  $("wrap").classList.toggle("hidden",!buildView);
+  $("cluster").classList.toggle("hidden",!buildView);
+  $("cmp").classList.toggle("hidden",buildView);
+  if(buildView){ renderInputs(); renderOutputs(); } else { renderCmp(); }
+}
+
+/* ================================================================
+   СОБЫТИЯ
+   ================================================================ */
+document.addEventListener("input",function(e){
+  var p=e.target.getAttribute("data-p");
+  if(!p) return;
+  set(p,e.target.value);
+  renderOutputs(); renderTabs(); updateLiveHints(); scheduleSave();
+});
+
+document.addEventListener("change",function(e){
+  var sel=e.target.getAttribute("data-sel");
+  if(!sel) return;
+  var b=cur(), v=e.target.value, i, p;
+  if(sel==="motor"){
+    for(i=0;i<MOTORS.length;i++) if(MOTORS[i].id===v) p=MOTORS[i];
+    b.motor.preset=p.id; b.motor.label=p.label; b.motor.type=p.type; b.motor.kv=p.kv;
+    b.motor.rPhase=p.rPhase; b.motor.maxRpm=p.maxRpm; b.motor.maxPhaseA=p.maxPhaseA;
+    b.motor.contW=p.contW; b.motor.peakW=p.peakW; b.motor.kg=p.kg; b.motor.ratio=p.ratio;
+    b.motor.tShaft=""; b.motor.tGear="";
+    if(p.type!=="hub"){ b.trans.front=(p.front!==undefined?p.front:b.trans.front); b.trans.rear=(p.rear!==undefined?p.rear:b.trans.rear); }
+  } else if(sel==="ctrl"){
+    for(i=0;i<CONTROLLERS.length;i++) if(CONTROLLERS[i].id===v) p=CONTROLLERS[i];
+    b.ctrl.preset=p.id; b.ctrl.label=p.label; b.ctrl.maxV=p.maxV;
+    b.ctrl.maxPhaseA=p.maxPhaseA; b.ctrl.maxBattA=p.maxBattA; b.ctrl.kg=p.kg;
+  } else if(sel==="chem"){
+    for(i=0;i<CELLS.length;i++) if(CELLS[i].id===v) p=CELLS[i];
+    b.batt.chem=p.id; b.batt.cellNom=p.nom; b.batt.cellMax=p.max; b.batt.cellMin=p.min;
+  }
+  renderAll(); scheduleSave();
+});
+
+document.addEventListener("click",function(e){
+  var el=e.target.closest("[data-act]");
+  if(!el) return;
+  var a=el.getAttribute("data-act"), v=el.getAttribute("data-v"), i=parseInt(el.getAttribute("data-i"),10);
+  var b=cur();
+  if(a==="tab"){ state.active=i; state.view="build"; renderAll(); scheduleSave(); }
+  else if(a==="add"){ var copy=JSON.parse(JSON.stringify(b)); copy.id=uid(); copy.name="Сборка "+(state.builds.length+1);
+    state.builds.push(copy); state.active=state.builds.length-1; state.view="build"; renderAll(); scheduleSave(); }
+  else if(a==="del"){ if(state.builds.length<2) return;
+    state.builds.splice(i,1); state.active=Math.max(0,Math.min(state.active>i?state.active-1:state.active,state.builds.length-1));
+    renderAll(); scheduleSave(); }
+  else if(a==="cur"){ state.cur=v; renderAll(); scheduleSave(); }
+  else if(a==="view"){ state.view=v; renderAll(); }
+  else if(a==="mtype"){ b.motor.type=v; renderAll(); scheduleSave(); }
+  else if(a==="soc"){ b.bike.soc=v; renderAll(); scheduleSave(); }
+  else if(a==="adv"){ state.adv=!state.adv; renderInputs(); }
+  else if(a==="xadd"){ b.extras.push({name:"",price:""}); renderInputs(); renderOutputs(); scheduleSave(); }
+  else if(a==="xdel"){ b.extras.splice(i,1); renderInputs(); renderOutputs(); scheduleSave(); }
+  else if(a==="reset"){ if(confirm("Удалить все сборки и начать заново?")){ state.builds=[makeBuild("Сборка 1")]; state.active=0; state.view="build"; renderAll(); saveNow(); } }
+  else if(a==="print"){ window.print(); }
+  else if(a==="savefile"){ saveFile(); }
+  else if(a==="json"){ download(pack(),"ev-build-"+stamp()+".json","application/json"); }
+  else if(a==="import"){ $("file").click(); }
+});
+
+$("file").addEventListener("change",function(e){
+  var f=e.target.files[0]; if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{
+      var txt=String(rd.result), data;
+      if(/\.html?$/i.test(f.name)){
+        var mm=txt.match(/<script id="seed" type="application\/json">([\s\S]*?)<\/script>/);
+        data=mm?JSON.parse(mm[1]):null;
+      } else data=JSON.parse(txt);
+      if(apply(data)){ renderAll(); saveNow(); } else alert("В файле нет сохранённых сборок.");
+    }catch(err){ alert("Файл не читается: "+err.message); }
+  };
+  rd.readAsText(f);
+  e.target.value="";
+});
+
+/* ================================================================
+   ФАЙЛЫ
+   ================================================================ */
+function stamp(){
+  var d=new Date(), p=function(x){return String(x).padStart(2,"0");};
+  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes());
+}
+function download(text,name,type){
+  var blob=new Blob([text],{type:(type||"text/html")+";charset=utf-8"});
+  var url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url; a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },400);
+}
+function saveFile(){
+  var clone=document.documentElement.cloneNode(true);
+  var i, dyn=clone.querySelectorAll("[data-dyn]");
+  for(i=0;i<dyn.length;i++) dyn[i].innerHTML="";
+  clone.querySelector("#seed").textContent=pack().replace(/<\//g,"<\\/");
+  download("<!DOCTYPE html>\n"+clone.outerHTML,"ev-build-"+stamp()+".html","text/html");
+}
+
+/* ================================================================ */
+boot();
+renderAll();
+saveNow();
+</script>
+</body>
+</html>
+<!--Сделал (тг)@FedorKkudrin-->
