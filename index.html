@@ -193,16 +193,44 @@ td.best{background:rgba(255,201,60,.10);color:#FFE49E;font-weight:600;border-rad
   .cl-v{font-size:24px}
   input[type=text]{width:68px}
 }
+#sheet{display:none}
+@page{size:A4 landscape;margin:7mm}
 @media print{
-  body{background:#fff;color:#000}
-  header,.acts{display:none!important}
-  .glass,.card,.total,.warn{background:#fff;border-color:#ccc;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
-  .wrap{grid-template-columns:1fr 1fr}
+  html,body{background:#fff!important;color:#000}
+  body>*:not(#sheet){display:none!important}
+  #sheet{display:block;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  :root{--txt:#000;--mut:#333;--hair:#aaa;--brd:#999}
+  #sheet .sh-h{display:flex;gap:14px;align-items:baseline;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:8px;font-size:12px}
+  #sheet .sh-h b{font:700 18px var(--disp);letter-spacing:.2em}
+  #sheet .sh-h span:last-child{margin-left:auto}
+  #sheet .cluster{border:1.5px solid #000;border-radius:0;margin-bottom:8px;background:#fff;box-shadow:none;backdrop-filter:none}
+  #sheet .cluster{grid-template-columns:repeat(6,1fr)!important}
+  #sheet .cl{padding:6px 10px;border-color:#999;border-right:1px solid #999!important}
+  #sheet .cl-k{font-size:9.5px;color:#333}
+  #sheet .cl-v{font-size:22px;color:#000!important}
+  #sheet .cl-v u,#sheet .cl-s{color:#333;font-size:10px}
+  #sheet .warns{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+  #sheet .warn{padding:3px 8px;font-size:10.5px;background:#fff!important;border:1px solid #999;border-left:4px solid #e80;border-radius:0;color:#000!important}
+  #sheet .warn.red{border-left-color:#c00} #sheet .warn.ok{border-left-color:#3a3}
+  #sheet .warn s{display:none}
+  #sheet .sh-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+  #sheet .sh{border:1.5px solid #000;break-inside:avoid}
+  #sheet .sh h4{margin:0;padding:3px 8px;background:#111;color:#fff;font:600 11px var(--disp);letter-spacing:.12em;text-transform:uppercase}
+  #sheet .sh>div{padding:3px 8px 5px}
+  #sheet .l2{font-size:11px;padding:2px 0}
+  #sheet .l2 .k{color:#222}
+  #sheet .l2 .v{white-space:nowrap;text-align:right;color:#000!important;font-size:11px}
+  #sheet .l2 .k{min-width:0}
+  #sheet .total{display:flex;justify-content:space-between;border-top:1.5px solid #000;margin-top:3px;padding-top:3px;font-size:14px;font-weight:700;background:#fff!important;border-radius:0!important;border-left:0!important;border-right:0!important;border-bottom:0!important;box-shadow:none!important}
+  #sheet .total b,#sheet .total span{color:#000!important;background:none!important;-webkit-text-fill-color:#000!important}
+  #sheet .sh-t{font:700 12px var(--disp);letter-spacing:.14em;text-transform:uppercase;border-bottom:2px solid #000;margin:2px 0 6px}
+  body.ex-min .sh-tech{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
+<div id="sheet" data-dyn></div>
 <!--Сделал (тг)@FedorKkudrin-->
 <header>
   <div class="bar glass">
@@ -212,8 +240,10 @@ td.best{background:rgba(255,201,60,.10);color:#FFE49E;font-weight:600;border-rad
     </div>
     <div class="bar-sp"></div>
     <div class="acts">
+      <div class="seg" id="langSeg"></div>
       <div class="seg" id="curSeg"></div>
       <div class="seg" id="viewSeg"></div>
+      <div class="seg" id="exSeg" title="Что попадёт в печать"></div>
       <button class="btn" data-act="print">Печать</button>
       <button class="btn" data-act="json">Экспорт JSON</button>
       <button class="btn" data-act="import">Импорт</button>
@@ -236,6 +266,72 @@ td.best{background:rgba(255,201,60,.10);color:#FFE49E;font-weight:600;border-rad
 <!--Сделал (тг)@FedorKkudrin-->
 <script>
 "use strict";
+
+/* ===== i18n: EN по умолчанию, RU переключателем; исходные строки остаются русскими ===== */
+var LANG="en", EXM="full";
+try{ LANG=localStorage.getItem("evbuild.lang")||"en"; EXM=localStorage.getItem("evbuild.ex")||"full"; }catch(e){}
+var TR_P={"Технические характеристики": "Technical specifications", "Напряжение": "Voltage", "Ячеек последовательно": "Cells in series", "Нм/А": "Nm/A", " / — с": " / — s", "Конфигуратор компонентов электротранспорта": "Electric vehicle component configurator", "Сохранить копию файла": "Save file copy", "Экспорт JSON": "Export JSON", "Печать": "Print", "Импорт": "Import", "Что попадёт в печать": "What goes to print", "Сравнение": "Compare", "Сборка": "Build", "+ сборка": "+ build", "Удалить сборку": "Delete build", "хранится в: ": "stored in: ", "хранилище приложения": "app storage", "браузер помнит этот файл": "browser remembers this file", "не сохраняется — жмите «Save file copy»": "not saved — press “Save file copy”", "не сохраняется — жмите «Сохранить копию файла»": "not saved — press “Save file copy”", "сохранено ": "saved ", "Мощность на колесе": "Wheel power", "из батареи ": "from battery ", "Момент на колесе": "Wheel torque", "на валу ": "shaft ", "Максималка": "Top speed", "предел — воздух": "limit: drag", "предел — обороты": "limit: rpm", "Разгон 0–100": "0–100 acceleration", "0–60 за ": "0–60 in ", "не набирает": "can't reach", "Запас хода": "Range", "на 70 км/ч · ": "at 70 km/h · ", "цены не заполнены": "no prices entered", " за кВт": " per kW", "Мотор — ": "Motor — ", "Контроллер — ": "Controller — ", "Батарея — ": "Battery — ", "без названия": "unnamed", "Мотор: ": "Motor: ", "Контроллер: ": "Controller: ", "Батарея: ": "Battery: ", "Трансмиссия и колесо": "Transmission & wheel", "Мотоцикл и условия": "Bike & conditions", "Прочие расходы": "Other expenses", "+ строка": "+ row", "Обороты и скорость": "RPM & speed", "Мотор-колесо": "Hub motor", "мотор-колесо": "hub motor", "редуктор": "gearbox", "цепь": "chain", "прямой привод, передаточное ": "direct drive, ratio ", "без ослабления поля: ": "without field weakening: ", " · с ослаблением поля: ": " · with field weakening: ", "Редуктор в моторе": "Motor gearbox", "1 — если редуктора нет": "1 = no gearbox", "обороты на вольт без нагрузки": "no-load rpm per volt", "Сопротивление фазы": "Phase resistance", "Предел оборотов": "Max rpm", "Макс. фазный ток": "Max phase current", "Мощность длительно": "Continuous power", "Мощность пик": "Peak power", "Крутящий момент на валу": "Shaft torque", "до редуктора · пусто — посчитаем по Kt и току": "before gearbox · empty = computed from Kt and current", "Крутящий момент на редукторе": "Gearbox output torque", "после редуктора · если знаете только его": "after gearbox · if you only know this", "Крутящий момент": "Torque", "по паспорту · пусто — посчитаем по Kt и току": "per datasheet · empty = computed from Kt and current", "Предел напряжения": "Voltage limit", "Фазный ток": "Phase current", "Ток батареи": "Battery current", "название сборки аккумулятора": "battery pack name", "мин, В": "min, V", "ном, В": "nom, V", "макс, В": "max, V", "Токоотдача": "Discharge current", "это ": "that's ", "впишите ёмкость, чтобы увидеть C": "enter capacity to see C-rate", "Внутреннее сопротивление": "Internal resistance", "Зарядное": "Charger", "Свой аккумулятор": "Custom battery", "Свой мотор": "Custom motor", "Свой контроллер": "Custom controller", "Звезда на моторе": "Motor sprocket", "Звезда на колесе": "Wheel sprocket", "Ширина резины": "Tire width", "радиус качения ": "rolling radius ", ", длина окружности ": ", circumference ", "Масса без мотора и батареи": "Weight without motor and battery", "Пилот с экипировкой": "Rider with gear", "снаряжённая ": "curb ", ", с пилотом ": ", with rider ", " · с пилотом ": " · with rider ", "Заряд батареи для расчёта": "Battery charge for calculation", "− свернуть допущения": "− hide assumptions", "+ допущения расчёта": "+ calculation assumptions", "0,45 лёжа · 0,55 нейкед · 0,75 прямая посадка": "0.45 tucked · 0.55 naked · 0.75 upright", "Коэффициент качения": "Rolling resistance coeff.", "Предел сцепления / вилли": "Traction / wheelie limit", "доля веса, реализуемая в тягу": "share of weight usable as traction", "КПД мотора": "Motor efficiency", "КПД контроллера": "Controller efficiency", "КПД трансмиссии": "Drivetrain efficiency", "Момент с учётом насыщения": "Torque with saturation", "доля от Kt·I": "fraction of Kt·I", "Ослабление поля": "Field weakening", "135 % ≈ типовой запас FOC": "135 % ≈ typical FOC headroom", "Глубина разряда": "Depth of discharge", "что покупаем": "what to buy", "прочее: ": "other: ", "Рама / маятник": "Frame / swingarm", "Подвеска": "Suspension", "Тормоза": "Brakes", "Колёса и резина": "Wheels & tires", "Проводка, BMS, мелочь": "Wiring, BMS, misc", "Конфликтов между компонентами не видно, ставлю \"лосяру\" 👍.": "No conflicts between components — looks solid 👍.", "Рабочее напряжение": "Working voltage", "Просадка под полным током": "Sag under full current", "Мощность из батареи": "Battery power", "Мощность на валу": "Shaft power", "Нагрузка на батарею": "Battery load", " C из ": " C of ", "Постоянная момента Kt": "Torque constant Kt", "Момент на валу по Kt·I (справочно)": "Shaft torque from Kt·I (reference)", "Момент на валу (по паспорту)": "Shaft torque (datasheet)", "Момент на валу (из паспорта редуктора)": "Shaft torque (from gearbox datasheet)", "Момент на валу (с поправкой на насыщение)": "Shaft torque (saturation-adjusted)", "Момент на редукторе": "Gearbox output torque", " (по паспорту)": " (datasheet)", "Передаточное отношение": "Gear ratio", "Тяга на пятне контакта": "Tractive force at contact patch", "Принятый предел сцепления": "Assumed traction limit", "Реализуемая тяга": "Usable traction", "Максимальный подъём": "Max gradient", "Конец полки момента": "End of torque plateau", "Холостые на этом напряжении": "No-load rpm at this voltage", "Потолок с ослаблением поля": "Ceiling with field weakening", "Механический предел мотора": "Motor mechanical limit", "Рабочий потолок": "Working ceiling", "Скорость без ослабления поля": "Speed without field weakening", "Скорость с ослаблением поля": "Speed with field weakening", "Расчётная максималка": "Calculated top speed", "Удельная мощность": "Power-to-weight", "Полезная ёмкость": "Usable capacity", "Зарядка 0 → 100 %": "Charging 0 → 100 %", "Масса батареи": "Battery weight", "Масса с пилотом": "Weight with rider", "За киловатт на колесе": "Per kW at wheel", "За киловатт-час батареи": "Per kWh of battery", "Показатель": "Metric", "Напряжение номинальное": "Nominal voltage", "Запас хода 70 км/ч": "Range at 70 km/h", "Цена за кВт": "Price per kW", "Замечания": "Warnings", " критичных": " critical", " предупреждений": " warnings", "Лучшее в строке подсвечено. Для сметы и цены за киловатт лучшим считается меньшее.": "Best in each row is highlighted. For cost and price per kW, lower is better.", "Очистить все сборки": "Clear all builds", "Удалить все сборки и начать заново?": "Delete all builds and start over?", "В файле нет сохранённых сборок.": "No saved builds in this file.", "Файл не читается: ": "Can't read file: ", "EV BUILD — конфигуратор электромотоцикла": "EV BUILD — electric motorcycle configurator"}, TR_X={"Модель": "Model", "Тип": "Type", "Название": "Name", "Химия": "Chemistry", "В": "V", "А": "A", "Н": "N", "Нм": "Nm", "Вт": "W", "кВт": "kW", "кВт·ч": "kWh", "А·ч": "Ah", "кг": "kg", "мм": "mm", "м": "m", "м²": "m²", "мОм": "mΩ", "об/мин": "rpm", "об/мин·В⁻¹": "rpm/V", "с": "s", "км": "km", "км/ч": "km/h", "зуб.": "teeth", "Мотор": "Motor", "Контроллер": "Controller", "Батарея": "Battery", "Колесо": "Wheel", "Момент": "Torque", "Смета": "Cost estimate", "Энергия": "Energy", "Электрика": "Electrical", "Масса": "Weight", "Цена": "Price", "Прочее": "Other", "Итого": "Total", "Ёмкость": "Capacity", "Профиль": "Aspect ratio", "Диск": "Rim", "Подъём": "Gradient", "Передаточное": "Ratio", "нет": "none", "низ": "low", "номинал": "nominal", "полный": "full", "Всё": "Full", "Главное": "Essentials"}, TR_U={"кВт·ч":"kWh","А·ч":"Ah","Вт·ч/км":"Wh/km","Вт/кг":"W/kg","км/ч":"km/h","об/мин":"rpm","кВт":"kW","Вт":"W","Нм":"Nm","мОм":"mΩ","кг":"kg","км":"km","мм":"mm","В":"V","А":"A","Н":"N","м":"m","с":"s","ч":"h","об":"rpm"};
+var TR_R=[[/Батарея на полном заряде (\S+) В — выше предела контроллера (\S+) В\. Меньше ячеек или другой контроллер\./,"Battery at full charge $1 V exceeds the controller limit of $2 V. Use fewer cells or a different controller."],[/Полный заряд (\S+) В почти упирается в предел контроллера (\S+) В — запаса нет\./,"Full charge $1 V is right at the controller limit of $2 V — no headroom."],[/Ток режет батарея: (\S+) А против (\S+) А у контроллера\. Теряется (\S+) % мощности\./,"Battery limits current: $1 A vs $2 A on the controller. Losing $3 % of power."],[/Фазный ток режет мотор: (\S+) А против (\S+) А у контроллера\./,"Motor limits phase current: $1 A vs $2 A on the controller."],[/На валу (\S+) кВт при паспортном пике (\S+) кВт\. Так можно только секундами\./,"$1 kW at the shaft vs. a rated peak of $2 kW. Only sustainable for seconds."],[/Пик (\S+) кВт — более чем вдвое выше длительных (\S+) кВт\. Точно не треснешь\?/,"Peak $1 kW is more than double the continuous $2 kW. Sure it won't cook?"],[/Просадка под полным током (\S+) % \(до (\S+) В\)\. Внутреннее сопротивление сборки великовато\./,"Sag under full current $1 % (down to $2 V). Pack internal resistance is a bit high."],[/Требуется (\S+) C, батарея отдаёт (\S+) C\./,"$1 C required, battery delivers $2 C."],[/Механический потолок (\S+) об\/мин наступает раньше электрического \((\S+) об\/мин\) — весь запас ослабления поля не выберется\./,"Mechanical ceiling of $1 rpm comes before the electrical one ($2 rpm) — the full field-weakening range can't be used."],[/Тяга (\S+) Н выше принятого предела сцепления\/вилли (\S+) Н — Бернаут на низах\)\)\)/,"Traction $1 N exceeds the assumed grip/wheelie limit of $2 N — burnout at low speed :)"],[/Значения в выпадающих списках[\s\S]*/,"Dropdown values are catalog averages — a starting point: before buying, check KV, phase current and gearbox ratio against the seller's datasheet and edit the fields. If a datasheet torque is entered (shaft or gearbox), the calculation uses it directly instead of Kt·I — more accurate. The linear torque drop in field weakening and constant efficiencies still give an upper-bound estimate — real figures are verified on a dyno and are usually 5–15 % lower."]];
+var TR_PK=Object.keys(TR_P).sort(function(a,b){return b.length-a.length;});
+var CYR=/[А-Яа-яЁё]/, UNRE=/(\d)[\s\u00a0]?(кВт·ч|А·ч|Вт·ч\/км|Вт\/кг|км\/ч|об\/мин|кВт|Вт|Нм|мОм|кг|км|мм|В|А|Н|м|с|ч|об)(?![А-Яа-яЁёA-Za-z])/g;
+function tr(s){
+  if(!CYR.test(s)) return s;
+  var t=s.trim();
+  if(TR_X.hasOwnProperty(t)) return s.replace(t,function(){return TR_X[t];});
+  var i; for(i=0;i<TR_R.length;i++) s=s.replace(TR_R[i][0],TR_R[i][1]);
+  for(i=0;i<TR_PK.length;i++) if(s.indexOf(TR_PK[i])>-1) s=s.split(TR_PK[i]).join(TR_P[TR_PK[i]]);
+  return s.replace(UNRE,function(m,d,u){return d+" "+TR_U[u];});
+}
+var ORIG=new WeakMap(), ORIGA=new WeakMap();
+function walk(root){
+  var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null), n, list=[], en=LANG==="en";
+  while((n=w.nextNode())) list.push(n);
+  list.forEach(function(n){
+    var p=n.parentNode; if(p&&(p.nodeName==="SCRIPT"||p.nodeName==="STYLE")) return;
+    if(en){ if(CYR.test(n.data)){ if(!ORIG.has(n)) ORIG.set(n,n.data); n.data=tr(n.data); } }
+    else if(ORIG.has(n)){ n.data=ORIG.get(n); ORIG.delete(n); }
+  });
+  Array.prototype.forEach.call(root.querySelectorAll("[placeholder],[title]"),function(el){
+    var o=ORIGA.get(el)||{}; ["placeholder","title"].forEach(function(a){
+      var v=el.getAttribute(a); if(v===null) return;
+      if(en){ if(CYR.test(v)){ o[a]=v; el.setAttribute(a,tr(v)); } }
+      else if(o[a]!==undefined){ el.setAttribute(a,o[a]); delete o[a]; }
+    }); ORIGA.set(el,o);
+  });
+  if(en) Array.prototype.forEach.call(root.querySelectorAll("input.txt"),function(el){
+    if(el!==document.activeElement && CYR.test(el.value)) el.value=tr(el.value);
+  });
+}
+var busy=false, mo=new MutationObserver(function(){ if(busy) return; busy=true; walk(document.body); mo.takeRecords(); busy=false; });
+function segUI(){
+  $("langSeg").innerHTML=["en","ru"].map(function(l){ return '<button data-act="lang" data-v="'+l+'" class="'+(LANG===l?"on":"")+'">'+l.toUpperCase()+'</button>'; }).join("");
+  $("exSeg").innerHTML='<button data-act="ex" data-v="full" class="'+(EXM==="full"?"on":"")+'">Всё</button><button data-act="ex" data-v="min" class="'+(EXM==="min"?"on":"")+'">Главное</button>';
+}
+function renderSheet(){
+  var b=cur(), r=compute(b); renderOutputs();
+  var m=b.motor,c=b.ctrl,t=b.batt,d=new Date().toLocaleDateString(LANG==="en"?"en-GB":"ru-RU");
+  var ch=CELLS.filter(function(x){return x.id===t.chem;})[0];
+  function v(x,u){ var n=parseFloat(String(x).replace(",",".")); return isFinite(n)?fmt(n,n%1?2:0)+(u?" "+u:""):"—"; }
+  function sec(k,h){ return '<section class="sh"><h4>'+k+'</h4><div>'+h+'</div></section>'; }
+  var cd=$("outputs").querySelectorAll(".outs .card");
+  function pad(i){ return cd[i].querySelector(".pad").innerHTML; }
+  var mot=l2("Модель",esc(m.label))+l2("Тип",m.type==="hub"?"Мотор-колесо":"mid-drive")+l2("KV",v(m.kv))+l2("Сопротивление фазы",v(m.rPhase,"мОм"))+l2("Предел оборотов",v(m.maxRpm,"об/мин"))+l2("Макс. фазный ток",v(m.maxPhaseA,"А"))+l2("Мощность длительно",v(m.contW,"Вт"))+l2("Мощность пик",v(m.peakW,"Вт"))+(m.type==="hub"?"":l2("Редуктор в моторе",v(m.ratio,": 1")))+l2("Масса",v(m.kg,"кг"));
+  var ctl=l2("Модель",esc(c.label))+l2("Предел напряжения",v(c.maxV,"В"))+l2("Фазный ток",v(c.maxPhaseA,"А"))+l2("Ток батареи",v(c.maxBattA,"А"))+l2("Масса",v(c.kg,"кг"));
+  var bat=l2("Название",esc(t.name||"—"))+l2("Химия",esc(ch?ch.label:"—"))+l2("Ячеек последовательно",f0(r.s)+"S")+l2("Напряжение",fmt(r.vMin,1)+" / "+fmt(r.vNom,1)+" / "+fmt(r.vMax,1)+" В")+l2("Ёмкость",v(t.ah,"А·ч")+" · "+fmt(r.kwh,2)+" кВт·ч")+l2("Токоотдача",v(t.maxA,"А")+(r.cMax>0?" ("+fmt(r.cMax,1)+" C)":""))+l2("Внутреннее сопротивление",v(t.rInt,"мОм"))+l2("Масса",v(t.kg,"кг"))+l2("Зарядное",v(t.chargerKw,"кВт"));
+  $("sheet").innerHTML='<div class="sh-h"><b>EV·BUILDER</b><span>'+esc(b.name)+'</span><span>'+d+'</span></div>'+
+    '<div class="cluster">'+$("cluster").innerHTML+'</div><div class="warns">'+$("outputs").querySelector(".warns").innerHTML+'</div>'+
+    '<div class="sh-row">'+sec("Мотор",mot)+sec("Контроллер",ctl)+sec("Батарея",bat)+sec("Смета",pad(4))+'</div>'+
+    '<div class="sh-tech"><div class="sh-t">Технические характеристики</div><div class="sh-row">'+sec("Электрика",pad(0))+sec("Момент",pad(1))+sec("Обороты и скорость",pad(2))+sec("Энергия",pad(3))+'</div></div>';
+  if(LANG==="en"){ busy=true; walk($("sheet")); mo.takeRecords(); busy=false; }
+}
+function setEx(v){ EXM=v; try{ localStorage.setItem("evbuild.ex",v); }catch(e){} document.body.classList.toggle("ex-min",v==="min"); segUI(); }
+function setLang(v){
+  LANG=v; try{ localStorage.setItem("evbuild.lang",v); }catch(e){}
+  document.documentElement.lang=v;
+  document.title = v==="en" ? "EV BUILD — electric motorcycle configurator" : "EV BUILD — конфигуратор электромотоцикла";
+  renderAll(); walk(document.body); mo.takeRecords();
+}
+window.addEventListener("beforeprint",renderSheet);
 
 /* ================================================================
    БАЗА КОМПЛЕКТУЮЩИХ — усреднённые каталожные значения.
@@ -280,7 +376,7 @@ var CELLS = [
    УТИЛИТЫ
    ================================================================ */
 function N(x,d){ var v = parseFloat(String(x).replace(",",".")); return isFinite(v) ? v : (d||0); }
-function fmt(x,d){ d = d===undefined?1:d; return isFinite(x) ? x.toLocaleString("ru-RU",{minimumFractionDigits:d,maximumFractionDigits:d}) : "—"; }
+function fmt(x,d){ d = d===undefined?1:d; return isFinite(x) ? x.toLocaleString(LANG==="en"?"en-US":"ru-RU",{minimumFractionDigits:d,maximumFractionDigits:d}) : "—"; }
 function f0(x){ return fmt(x,0); }
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function money(x){ return x>0 ? f0(x)+" "+state.cur : "—"; }
@@ -707,7 +803,7 @@ function renderOutputs(){
     l2("Удельная мощность",f0(r.wPerKg)+" Вт/кг")+
     '</div></section>';
 
-  h+='<section class="card glass"><h3><span class="ix">D</span>Энергия</h3><div class="pad">'+
+  h+='<section class="card glass ess"><h3><span class="ix">D</span>Энергия</h3><div class="pad">'+
     l2("Ёмкость",fmt(r.kwh,2)+" кВт·ч")+
     l2("Полезная ёмкость",fmt(r.usable,2)+" кВт·ч")+
     l2("50 км/ч",f0(r.r50.wpk)+" Вт·ч/км → "+f0(r.r50.km)+" км")+
@@ -718,7 +814,7 @@ function renderOutputs(){
     l2("Масса с пилотом",f0(r.mass)+" кг")+
     '</div></section>';
 
-  h+='<section class="card glass"><h3><span class="ix">E</span>Смета</h3><div class="pad">'+
+  h+='<section class="card glass ess"><h3><span class="ix">E</span>Смета</h3><div class="pad">'+
     l2("Мотор — "+esc(b.motor.label),money(N(b.motor.price,0)))+
     l2("Контроллер — "+esc(b.ctrl.label),money(N(b.ctrl.price,0)))+
     l2("Батарея — "+esc(b.batt.name||"без названия"),money(N(b.batt.price,0)))+
@@ -781,7 +877,7 @@ function renderCmp(){
 }
 <!--Сделал (tг)@FedorKkudrin-->
 function renderAll(){
-  renderTabs();
+  renderTabs(); segUI();
   var buildView = state.view==="build";
   $("wrap").classList.toggle("hidden",!buildView);
   $("cluster").classList.toggle("hidden",!buildView);
@@ -839,8 +935,10 @@ document.addEventListener("click",function(e){
   else if(a==="adv"){ state.adv=!state.adv; renderInputs(); }
   else if(a==="xadd"){ b.extras.push({name:"",price:""}); renderInputs(); renderOutputs(); scheduleSave(); }
   else if(a==="xdel"){ b.extras.splice(i,1); renderInputs(); renderOutputs(); scheduleSave(); }
-  else if(a==="reset"){ if(confirm("Удалить все сборки и начать заново?")){ state.builds=[makeBuild("Сборка 1")]; state.active=0; state.view="build"; renderAll(); saveNow(); } }
-  else if(a==="print"){ window.print(); }
+  else if(a==="reset"){ if(confirm(tr("Удалить все сборки и начать заново?"))){ state.builds=[makeBuild("Сборка 1")]; state.active=0; state.view="build"; renderAll(); saveNow(); } }
+  else if(a==="lang"){ setLang(v); }
+  else if(a==="ex"){ setEx(v); }
+  else if(a==="print"){ renderSheet(); window.print(); }
   else if(a==="savefile"){ saveFile(); }
   else if(a==="json"){ download(pack(),"ev-build-"+stamp()+".json","application/json"); }
   else if(a==="import"){ $("file").click(); }
@@ -856,8 +954,8 @@ $("file").addEventListener("change",function(e){
         var mm=txt.match(/<script id="seed" type="application\/json">([\s\S]*?)<\/script>/);
         data=mm?JSON.parse(mm[1]):null;
       } else data=JSON.parse(txt);
-      if(apply(data)){ renderAll(); saveNow(); } else alert("В файле нет сохранённых сборок.");
-    }catch(err){ alert("Файл не читается: "+err.message); }
+      if(apply(data)){ renderAll(); saveNow(); } else alert(tr("В файле нет сохранённых сборок."));
+    }catch(err){ alert(tr("Файл не читается: ")+err.message); }
   };
   rd.readAsText(f);
   e.target.value="";
@@ -877,17 +975,21 @@ function download(text,name,type){
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },400);
 }
 function saveFile(){
+  var wasEn=LANG==="en"; if(wasEn){ LANG="ru"; walk(document.body); }
   var clone=document.documentElement.cloneNode(true);
   var i, dyn=clone.querySelectorAll("[data-dyn]");
   for(i=0;i<dyn.length;i++) dyn[i].innerHTML="";
   clone.querySelector("#seed").textContent=pack().replace(/<\//g,"<\\/");
   download("<!DOCTYPE html>\n"+clone.outerHTML,"ev-build-"+stamp()+".html","text/html");
+  if(wasEn){ LANG="en"; walk(document.body); mo.takeRecords(); }
 }
 
 /* ================================================================ */
 boot();
 renderAll();
 saveNow();
+mo.observe(document.body,{childList:true,subtree:true,characterData:true});
+setEx(EXM); setLang(LANG);
 </script>
 </body>
 </html>
